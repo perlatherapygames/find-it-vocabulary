@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Find It! — Vocabulary Treasure Hunt</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:linear-gradient(180deg,#FFF7E6,#EFF6FF);color:#1F2937;min-height:100vh;text-align:center}
+header{padding:14px 10px 4px}
+h1{margin:0;font-size:34px;color:#2563EB}
+.sub{font-size:17px;color:#6B7280;margin:4px 0 0}
+#starsLine{font-size:24px;margin:8px 0 0;font-weight:800}
+#accLine{font-size:22px;margin:6px 0 0;font-weight:800;color:#1E40AF}
+#accLine .goal{color:#2563EB}
+#accLine.low{color:#B45309}
+#bar{height:14px;background:#fff;border:2px solid #93C5FD;border-radius:99px;margin:10px 18px 0;overflow:hidden}
+#fill{height:100%;width:0%;background:linear-gradient(90deg,#60A5FA,#FBBF24);transition:width .4s}
+#card{background:#fff;border:4px solid #93C5FD;border-radius:26px;margin:16px 14px;padding:18px 14px 22px;min-height:560px;box-shadow:0 8px 24px rgba(37,99,235,.15)}
+#picWrap{font-size:150px;line-height:1.1;min-height:190px;display:flex;align-items:center;justify-content:center}
+#revealBtn{font-size:22px;font-weight:800;padding:14px 26px;border-radius:99px;border:none;background:#FBBF24;color:#78350F;cursor:pointer;margin-top:6px}
+#prompt{font-size:30px;font-weight:800;margin:14px 0 6px}
+#picGrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin:16px 4px 4px}
+.picBtn{font-size:84px;padding:18px 6px;border-radius:18px;border:3px solid #93C5FD;background:#EFF6FF;cursor:pointer;min-height:140px;line-height:1}
+.picBtn.correct{background:#BBF7D0;border-color:#16A34A}
+.picBtn.wrong{background:#FECACA;border-color:#DC2626;opacity:.55}
+#answer{font-size:30px;font-weight:900;color:#2563EB;margin:12px 0 4px;min-height:38px}
+#sayHint{font-size:18px;color:#6B7280}
+.bigBtn{font-size:22px;font-weight:800;padding:16px 24px;border-radius:99px;border:none;cursor:pointer;margin:8px 6px 0}
+#hearIt{background:#3B82F6;color:#fff}
+#nextBtn{background:#2563EB;color:#fff;display:none}
+#break{font-size:24px;font-weight:800;color:#7C3AED;margin:10px 0}
+#controls{display:flex;gap:10px;justify-content:center;margin:0 14px 18px;flex-wrap:wrap}
+.smallBtn{font-size:17px;font-weight:700;padding:12px 16px;border-radius:14px;border:2px solid #D1D5DB;background:#fff;cursor:pointer}
+#end{font-size:24px;font-weight:800;color:#2563EB}
+#history{font-size:18px;font-weight:700;color:#1E40AF;margin:10px 14px 18px;text-align:left;max-width:520px;display:inline-block}
+#history div{margin:4px 0}
+#confetti{font-size:44px}
+</style>
+</head>
+<body>
+<header>
+<h1>🔍 Find It!</h1>
+<p class="sub">Vocabulary Treasure Hunt — find the picture, no hints, just look!</p>
+<div id="starsLine">⭐ <span id="starCount">0</span> &nbsp;•&nbsp; Round <span id="roundNum">1</span> of 30 &nbsp;•&nbsp; Session <span id="sessionNum">1</span></div>
+<div id="accLine">✅ First try: <span id="firstCount">0</span> / <span id="answeredCount">0</span> = <span id="accPct">—</span> &nbsp;•&nbsp; <span class="goal">Goal: 90%</span></div>
+<div id="bar"><div id="fill"></div></div>
+</header>
+<div id="card">
+<div id="picWrap">🎁</div>
+<button id="revealBtn">Open the Mystery Box! 🎁</button>
+<div id="prompt">What's hiding in the box?</div>
+<div id="picGrid" style="display:none"></div>
+<div id="answer"></div>
+<div id="sayHint"></div>
+<div id="break"></div>
+<button class="bigBtn" id="hearIt" style="display:none">🔊 Hear It</button>
+<button class="bigBtn" id="nextBtn">Next! ➡️</button>
+</div>
+<div id="controls">
+<button class="smallBtn" id="shuffleBtn">🔀 Shuffle</button>
+<button class="smallBtn" id="restartBtn">↩️ Play Again</button>
+<button class="smallBtn" id="soundBtn">🔊 Sound: On</button>
+</div>
+<div id="end"></div>
+<div id="history"></div>
+<script>
+// ---------- data: [emoji, name, category] — 10 targets per category, 30 total ----------
+// Food: 10 | Animals: 10 | Common Objects: 10
+const ITEMS=[
+["🍎","apple","food"],["🍌","banana","food"],["🍕","pizza","food"],["🎂","cake","food"],["🍪","cookie","food"],["🥛","milk","food"],["🥚","egg","food"],["🍞","bread","food"],["🍦","ice cream","food"],["🍊","orange","food"],
+["🐶","dog","animals"],["🐱","cat","animals"],["🐦","bird","animals"],["🐟","fish","animals"],["🦁","lion","animals"],["🐘","elephant","animals"],["🐰","rabbit","animals"],["🐷","pig","animals"],["🐮","cow","animals"],["🐴","horse","animals"],
+["⚽","ball","objects"],["📖","book","objects"],["🥤","cup","objects"],["👟","shoe","objects"],["🎩","hat","objects"],["🪑","chair","objects"],["🛏️","bed","objects"],["📱","phone","objects"],["🕐","clock","objects"],["🔑","key","objects"]
+];
+const SILLY=[["🦖","Find it like a DINOSAUR! ROAR!"],["🤖","Find it like a ROBOT! Beep boop!"],["🦁","Find it like a big LION! ROAR!"],["🐭","Find it in a tiny MOUSE way!"],["👶","Find it like a BABY! Goo goo!"],["🐸","Find it like a FROG! Ribbit!"],["🎤","Find it like a ROCK STAR!"],["🤫","Find it in a sneaky WHISPER way!"],["📣","Find it SUPER LOUD!"],["🐶","Find it like a PUPPY! Woof woof!"]];
+let order=shuffle([...ITEMS.keys()]), idx=0, stars=0, streak=0, soundOn=true, revealed=false, answered=false, triedWrong=false;
+let firstCorrect=0, answeredCount=0, session=1, sessionHistory=[];
+function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
+const pic=document.getElementById('picWrap'), promptEl=document.getElementById('prompt'), ans=document.getElementById('answer'), hint=document.getElementById('sayHint'), brk=document.getElementById('break');
+const revealBtn=document.getElementById('revealBtn'), hearBtn=document.getElementById('hearIt'), nextBtn=document.getElementById('nextBtn'), picGrid=document.getElementById('picGrid');
+function speak(t){ if(!soundOn) return; try{ speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(t); u.rate=.85; speechSynthesis.speak(u);}catch(e){} }
+function boing(){ if(!soundOn) return; try{ const ctx=new (window.AudioContext||window.webkitAudioContext)(); const o=ctx.createOscillator(), g=ctx.createGain(); o.type='sine'; o.frequency.setValueAtTime(600,ctx.currentTime); o.frequency.exponentialRampToValueAtTime(1200,ctx.currentTime+.15); g.gain.setValueAtTime(.2,ctx.currentTime); g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.3); o.connect(g); g.connect(ctx.destination); o.start(); o.stop(ctx.currentTime+.3);}catch(e){} }
+function ding(){ if(!soundOn) return; try{ const ctx=new (window.AudioContext||window.webkitAudioContext)(); [880,1320].forEach((f,i)=>{ const o=ctx.createOscillator(), g=ctx.createGain(); o.type='sine'; o.frequency.value=f; g.gain.setValueAtTime(.15,ctx.currentTime+i*.12); g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+i*.12+.4); o.connect(g); g.connect(ctx.destination); o.start(ctx.currentTime+i*.12); o.stop(ctx.currentTime+i*.12+.4);});}catch(e){} }
+// Header updates use textContent on separate spans only — never innerHTML on the header, so no span is ever destroyed.
+function updateHeader(){
+  document.getElementById('starCount').textContent=stars;
+  document.getElementById('roundNum').textContent=Math.min(idx+1, ITEMS.length);
+  document.getElementById('sessionNum').textContent=session;
+  document.getElementById('firstCount').textContent=firstCorrect;
+  document.getElementById('answeredCount').textContent=answeredCount;
+  document.getElementById('accPct').textContent=answeredCount===0 ? '—' : Math.round(firstCorrect/answeredCount*100)+'%';
+  document.getElementById('accLine').classList.toggle('low', answeredCount>0 && firstCorrect/answeredCount<0.9);
+  document.getElementById('fill').style.width=(idx/ITEMS.length*100)+'%';
+}
+function showCard(){
+  revealed=false; answered=false; triedWrong=false;
+  pic.textContent='🎁';
+  revealBtn.style.display='inline-block';
+  promptEl.textContent="What's hiding in the box?";
+  picGrid.style.display='none'; picGrid.innerHTML='';
+  ans.textContent=''; hint.textContent=''; brk.textContent='';
+  hearBtn.style.display='none'; nextBtn.style.display='none'; nextBtn.textContent='Next! ➡️';
+  document.getElementById('end').textContent='';
+  updateHeader();
+}
+function reveal(){
+  const [emoji,name,cat]=ITEMS[order[idx]];
+  revealed=true; pic.textContent=emoji;
+  revealBtn.style.display='none'; boing();
+  promptEl.textContent='Find the '+name.toUpperCase()+'!';
+  const silly=SILLY[Math.floor(Math.random()*SILLY.length)];
+  hint.textContent=silly[0]+' '+silly[1];
+  speak('Find the '+name+'!');
+  // No cues: pictures only, NO word labels under the pictures.
+  // Distractors are two other items from the SAME category.
+  const sameCat=ITEMS.filter(it=>it[2]===cat && it[1]!==name);
+  const distractors=shuffle([...sameCat]).slice(0,2);
+  const choices=shuffle([[emoji,name,true], ...distractors.map(d=>[d[0],d[1],false])]);
+  picGrid.style.display='grid';
+  choices.forEach(([e,n,isTarget])=>{
+    const b=document.createElement('button'); b.className='picBtn'; b.textContent=e;
+    b.setAttribute('aria-label', n);
+    b.onclick=()=>{
+      if(answered) return;
+      if(isTarget){
+        answered=true; b.classList.add('correct');
+        answeredCount++;
+        if(!triedWrong){ firstCorrect++; }
+        award(name);
+      } else {
+        b.classList.add('wrong'); triedWrong=true; streak=0;
+        ans.textContent='Oops! Try again! 💪';
+        hint.textContent='Look again — find the '+name+'!';
+        speak('Try again');
+      }
+    };
+    picGrid.appendChild(b);
+  });
+  hearBtn.style.display='inline-block';
+}
+function award(name){
+  streak++; ding();
+  stars++;
+  if(streak>=3){ brk.innerHTML='🔥 '+streak+' in a row! You are on FIRE! 🔥'; }
+  if(stars===10){ brk.innerHTML='🌟🌟🌟 10 STARS! You are a SUPERSTAR! 🌟🌟🌟'; }
+  if(stars===25){ brk.innerHTML='🎉🎉 25 STARS! Almost a LEGEND! 🎉🎉'; }
+  if(stars===30){ brk.innerHTML='🏆🏆 30 STARS! You found them ALL! 🏆🏆'; }
+  if(stars%5===0){ brk.innerHTML='🎉 Dance break! 🕺💃 <br>Shake your arms, wiggle, then keep going!'; }
+  ans.textContent='Yes! You found the '+name+'! 🎉';
+  hint.textContent='Say it out loud: "'+name+'!" Great finding!';
+  speak('Yes! You found the '+name+'!');
+  hearBtn.style.display='none';
+  nextBtn.style.display='inline-block';
+  nextBtn.textContent=(idx===ITEMS.length-1) ? 'Play Again — Session '+(session+1)+'! 🔄' : 'Next! ➡️';
+  document.getElementById('fill').style.width=((idx+1)/ITEMS.length*100)+'%';
+  updateHeader();
+  if(idx===ITEMS.length-1){ finishSession(); }
+}
+function finishSession(){
+  const pct=answeredCount===0?0:Math.round(firstCorrect/answeredCount*100);
+  const passed=pct>=90;
+  sessionHistory.push({session:session, pct:pct, correct:firstCorrect, total:answeredCount});
+  document.getElementById('end').innerHTML='<div id="confetti">🎉🏆🎉</div>Session '+session+' done! You found '+firstCorrect+' of '+answeredCount+' on the first try — '+pct+'%! '+(passed?'🎉 That is 90% or more — GOAL MET!':'Keep going — the goal is 90%!');
+  const h=document.getElementById('history');
+  h.innerHTML='<b>Your sessions (goal: 90% in 3 in a row):</b>'+sessionHistory.map(s=>'<div>Session '+s.session+': '+s.pct+'% ('+s.correct+'/'+s.total+') '+(s.pct>=90?'✅':'')+'</div>').join('');
+  const done=sessionHistory.length>=3 && sessionHistory.slice(-3).every(s=>s.pct>=90);
+  if(done){ document.getElementById('end').innerHTML+='<br>🏆🏆🏆 GOAL REACHED! 3 SESSIONS IN A ROW AT 90% OR MORE! 🏆🏆🏆'; }
+}
+revealBtn.onclick=reveal;
+hearBtn.onclick=()=>{ const [e,n,c]=ITEMS[order[idx]]; speak('Find the '+n+'!'); };
+nextBtn.onclick=()=>{
+  if(idx>=ITEMS.length-1){
+    // Start a new session
+    session++; order=shuffle([...ITEMS.keys()]); idx=0; stars=0; streak=0; firstCorrect=0; answeredCount=0;
+    document.getElementById('history').innerHTML='<b>Your sessions (goal: 90% in 3 in a row):</b>'+sessionHistory.map(s=>'<div>Session '+s.session+': '+s.pct+'% ('+s.correct+'/'+s.total+') '+(s.pct>=90?'✅':'')+'</div>').join('');
+    showCard();
+  } else { idx++; showCard(); }
+};
+document.getElementById('shuffleBtn').onclick=()=>{ order=shuffle(order); idx=0; showCard(); };
+document.getElementById('restartBtn').onclick=()=>{ order=shuffle([...ITEMS.keys()]); idx=0; stars=0; streak=0; firstCorrect=0; answeredCount=0; showCard(); };
+document.getElementById('soundBtn').onclick=(e)=>{ soundOn=!soundOn; e.target.textContent=soundOn?'🔊 Sound: On':'🔇 Sound: Off'; };
+showCard();
+</script>
+</body>
+</html>
